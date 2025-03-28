@@ -3,170 +3,133 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stagiaire;
+use App\Models\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Controller;
 
 class StagiaireController extends Controller
 {
-    // Show registration form
-    public function showRegistrationForm()
-    {
-        return view('stagiaire.register');
-    }
-    public function update(Request $request)
-    {
-        $stagiaire = Auth::guard('stagiaire')->user();
-    
-        $validated = $request->validate([
-            'nom' => 'required|string|max:100',
-            'prenom' => 'required|string|max:100',
-            'email' => 'required|string|email|max:150|unique:stagiaires,email,' . $stagiaire->id,
-            'domaine_etudes' => 'required|string|max:100',
-            'cv' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-        ]);
-    
-        // If CV is uploaded, store it
-        if ($request->hasFile('cv')) {
-            $path = $request->file('cv')->store('cv', 'public'); 
-            $validated['cv'] = $path; // Correct path, no extra "storage/"
-        }
-        
-        
-        // Update the stagiaire's profile
-        $stagiaire->update($validated);
-    
-        Toastr::success('Profile updated successfully!', 'Success');
-        return redirect()->route('stagiaire.dashboard');
-    }
-    
-    // Handle registration
-    public function register(Request $request)
-    {
-        $validated = $request->validate([
-            'nom' => 'required|string|max:100',
-            'prenom' => 'required|string|max:100',
-            'email' => 'required|string|email|max:150|unique:stagiaires',
-            'mot_de_passe' => 'required|string|min:8|confirmed',
-            'domaine_etudes' => 'required|string|max:100',
-            'cv' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-        ]);
-        
-        if ($request->hasFile('cv')) {
-            $path = $request->file('cv')->store('public/cv');
-            $validated['cv'] = str_replace('public/', 'storage/', $path);
-        }
-        
-        // Manually hash the password using MD5
-        $hashedPassword = md5($validated['mot_de_passe']);
-    
-        // Create the stagiaire and store the password hash (MD5)
-        $stagiaire = Stagiaire::create([
-            'nom' => $validated['nom'],
-            'prenom' => $validated['prenom'],
-            'email' => $validated['email'],
-            'mot_de_passe' => $hashedPassword,  // Store MD5 hash
-            'domaine_etudes' => $validated['domaine_etudes'],
-            'cv' => $validated['cv'] ?? null,
-        ]);
-        
-        // Log the stagiaire in
-        Auth::login($stagiaire);
-    
-        // Return a success message
-        return redirect()->route('index')->with('success', 'Registration successful!');
-    }
-    
-    
-    // Handle login with token (MD5 check)
+    // Login with email and password (using MD5 hashed password)
     public function loginWithToken(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
             'mot_de_passe' => 'required|string'
         ]);
-    
-        // Retrieve stagiaire by email
-        $stagiaire = Stagiaire::where('email', $request->input('email'))->first();
-    
-        if ($stagiaire) {
-            // Hash the input password using MD5
-            $hashedInputPassword = md5($request->input('mot_de_passe'));
-    
-            // Check if the MD5 hash of the input password matches the stored hash
-            if ($hashedInputPassword === $stagiaire->mot_de_passe) {
-                // Log in the stagiaire
-                Auth::guard('stagiaire')->login($stagiaire);
-                Toastr::success('Connexion réussie!', 'Bienvenue');
-                return redirect()->route('stagiaire.dashboard');
-            }
+
+        $stagiaire = Stagiaire::where('email', $request->email)->first();
+
+        // Check if the password matches using MD5
+        if ($stagiaire && md5($request->mot_de_passe) === $stagiaire->mot_de_passe) {
+            Auth::guard('stagiaire')->login($stagiaire);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'user' => $stagiaire
+            ]);
         }
-    
-        // If login fails
-        Toastr::error('Identifiants invalides.', 'Erreur');
-        return back();
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid credentials'
+        ], 401);
     }
 
-    // Show login form
-    public function showLoginForm()
+    // Register a new stagiaire (using MD5 for password hashing)
+    public function register(Request $request)
     {
-        return view('stagiaire.login');
+        $validated = $request->validate([
+            'nom' => 'required|string|max:100',
+            'prenom' => 'required|string|max:100',
+            'email' => 'required|email|max:150|unique:stagiaires',
+            'mot_de_passe' => 'required|string|min:8|confirmed',
+            'domaine_etudes' => 'required|string|max:100',
+            'cv' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
+        ]);
+
+        // Hash the password using MD5
+        $validated['mot_de_passe'] = md5($validated['mot_de_passe']);
+
+        // Store CV if uploaded
+        if ($request->hasFile('cv')) {
+            $validated['cv'] = $request->file('cv')->store('cv', 'public');
+        }
+
+        $stagiaire = Stagiaire::create($validated);
+        Auth::guard('stagiaire')->login($stagiaire);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registration successful',
+            'user' => $stagiaire
+        ], 201);
     }
 
-    // Logout function
+    // Logout the stagiaire
     public function logout(Request $request)
     {
         Auth::guard('stagiaire')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        Toastr::info('Vous avez été déconnecté.', 'Déconnexion');
-        return redirect('/');
+
+        return response()->json(['success' => true]);
     }
 
-    // Show dashboard
-    public function dashboard()
+    // Get the CV of the authenticated stagiaire
+    public function getCv()
     {
-        $candidatures = Auth::guard('stagiaire')->user()
-            ->candidatures()
-            ->with(['offre.entreprise']) // Eager load the chain
-            ->paginate(10);
-        
-        return view('stagiaire.dashboard', compact('candidatures'));
+        $stagiaire = Auth::guard('stagiaire')->user();
+
+        // Check if user has uploaded a CV
+        if ($stagiaire && $stagiaire->cv) {
+            $cvUrl = Storage::url($stagiaire->cv); // Assuming the CV is stored in the 'public' disk
+            return response()->json(['cv' => $cvUrl]);
+        }
+
+        return response()->json(['error' => 'No CV uploaded'], 404);
     }
-    // Add this method to your existing StagiaireController
-    public function storeCandidature(Request $request)
+
+    // Get all applications (candidatures) of the authenticated stagiaire
+    public function getApplications()
+    {
+        $stagiaire = Auth::guard('stagiaire')->user();
+
+        // Fetch applications for the authenticated user
+        if ($stagiaire) {
+            $applications = Application::where('stagiaire_id', $stagiaire->id)->get();
+            return response()->json($applications);
+        }
+
+        return response()->json(['error' => 'No applications found'], 404);
+    }
+
+    // Upload a new CV for the authenticated stagiaire
+    public function uploadCv(Request $request)
     {
         $request->validate([
-            'offre_id' => 'required|exists:offres,id',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'portfolio' => 'nullable|url',
-            'cv' => 'nullable|file|mimes:pdf,doc,docx', // Make it nullable
-            'cover_letter' => 'nullable|string',
+            'cv' => 'required|file|mimes:pdf,doc,docx|max:2048',
         ]);
-    
+
         $stagiaire = Auth::guard('stagiaire')->user();
-    
-        $cvUrl = $request->existing_cv;
-        
-        if ($request->hasFile('cv')) {
-            $path = $request->file('cv')->store('public/cv');
-            $cvUrl = str_replace('public/', 'storage/', $path);
+
+        if ($stagiaire) {
+            if ($request->hasFile('cv')) {
+                // Store the new CV file
+                $path = $request->file('cv')->store('cv', 'public');
+                $stagiaire->cv = $path;
+                $stagiaire->save();
+
+                // Log the response or dump to inspect it
+                Log::info('CV uploaded successfully', ['cv_path' => $path]);
+
+                return response()->json(['cv' => Storage::url($path)]);
+            }
         }
-    
-        // Create the candidature
-        $candidature = $stagiaire->candidatures()->create([
-            'offre_id' => $request->offre_id,
-            'name' => $request->name,
-            'email' => $request->email,
-            'portfolio' => $request->portfolio,
-            'cv' => $cvUrl,
-            'cover_letter' => $request->cover_letter,
-            'statut' => 'En attente',
-        ]);
-    
-        Toastr::success('Your application has been submitted successfully!', 'Success');
-        return redirect()->back();
+
+        // If upload fails
+        return response()->json(['error' => 'Unable to upload CV'], 400);
     }
 }

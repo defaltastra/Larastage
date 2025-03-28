@@ -5,40 +5,39 @@ use App\Http\Controllers\StagiaireController;
 use App\Http\Controllers\EntrepriseController;
 use App\Http\Controllers\OffreController;
 
-// Public Pages
-Route::get('/', function () {
-    return view('index'); // This will serve your React app
-})->name('index');
-
+// Public contact route
 Route::get('/contact', function () {
     return view('contact');
 })->name('contact');
 
-// API Routes
+// API Routes for public and authenticated users
 Route::prefix('api')->group(function() {
     // Public API routes
     Route::get('/offres', [OffreController::class, 'index'])->name('api.offres.index');
     Route::get('/offres/{offre}', [OffreController::class, 'show'])->name('api.offres.show');
     Route::get('/companies', [EntrepriseController::class, 'index'])->name('api.companies.index');
-    
+
     // Stagiaire (Candidate) Authentication & API
     Route::prefix('stagiaire')->group(function() {
         Route::post('/login', [StagiaireController::class, 'loginWithToken']);
         Route::post('/register', [StagiaireController::class, 'register']);
         
-        Route::middleware('auth:stagiaire')->group(function() {
-            Route::get('/dashboard', [StagiaireController::class, 'dashboard']);
+            Route::get('/cv', [StagiaireController::class, 'getCv']);
+            Route::get('/candidatures', [StagiaireController::class, 'getApplications']);
+            Route::post('/cv/upload', [StagiaireController::class, 'uploadCv']); // For uploading CV
             Route::post('/logout', [StagiaireController::class, 'logout']);
+            Route::get('/dashboard', [StagiaireController::class, 'dashboard']);
             Route::put('/update', [StagiaireController::class, 'update']);
             Route::post('/candidatures', [StagiaireController::class, 'storeCandidature']);
-        });
     });
-    
+
     // Entreprise (Company) Authentication & API
     Route::prefix('entreprise')->group(function() {
+        // Public routes
         Route::post('/register', [EntrepriseController::class, 'register']);
         Route::post('/login', [EntrepriseController::class, 'login']);
         
+        // Routes that require authentication
         Route::middleware('auth:entreprise')->group(function() {
             Route::get('/dashboard', [EntrepriseController::class, 'dashboard']);
             Route::post('/logout', [EntrepriseController::class, 'logout']);
@@ -48,7 +47,10 @@ Route::prefix('api')->group(function() {
     });
 });
 
-// These routes will be handled by React Router in your frontend
-Route::get('/{any}', function () {
-    return view('index');
-})->where('any', '.*');
+// CSRF Token route for frontend to fetch
+Route::get('/csrf-token', function () {
+    return response()->json([
+        'csrfToken' => csrf_token()
+    ]);
+});
+

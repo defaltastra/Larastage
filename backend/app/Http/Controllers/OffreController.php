@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Http\Controllers;
 
 use App\Models\Offre;
@@ -10,7 +9,6 @@ class OffreController extends Controller
 {
     public function index()
     {
-        // Change from ->get() to ->paginate()
         $offres = Offre::query()
             ->when(request('search'), function($query) {
                 $query->where('titre', 'like', '%'.request('search').'%')
@@ -31,11 +29,46 @@ class OffreController extends Controller
             ->with('entreprise')
             ->paginate(10);
             
-        return view('offres.index', compact('offres'));
+        return response()->json([
+            'success' => true,
+            'data' => $offres->items(),
+            'pagination' => [
+                'total' => $offres->total(),
+                'per_page' => $offres->perPage(),
+                'current_page' => $offres->currentPage(),
+                'last_page' => $offres->lastPage(),
+                'from' => $offres->firstItem(),
+                'to' => $offres->lastItem()
+            ],
+            'filters' => [
+                'search' => request('search'),
+                'localisation' => request('localisation'),
+                'domaine' => request('domaine'),
+                'sort' => request('sort')
+            ]
+        ]);
     }
+
     public function show(Offre $offre)
     {
-        // Show a specific job offer
-        return view('offres.show', compact('offre'));
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $offre->id,
+                'titre' => $offre->titre,
+                'description' => $offre->description,
+                'domaine' => $offre->domaine,
+                'localisation' => $offre->localisation,
+                'created_at' => $offre->created_at,
+                'updated_at' => $offre->updated_at,
+                'entreprise' => [
+                    'id' => $offre->entreprise->id,
+                    'name' => $offre->entreprise->name,
+                    'logo' => $offre->entreprise->logo,
+                    'description' => $offre->entreprise->description,
+                    'verified' => $offre->entreprise->verified
+                ]
+            ]
+        ]);
     }
 }
