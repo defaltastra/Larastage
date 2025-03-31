@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Building2, MapPin, CheckCircle } from 'lucide-react';
+import { Building2, CheckCircle } from 'lucide-react';
 
 interface OffreDetails {
   id: number;
@@ -22,26 +22,29 @@ const InternshipDetails: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [applied, setApplied] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
+  const [csrfToken, setCsrfToken] = useState<string>(''); // Store CSRF token
 
   useEffect(() => {
+    // 🔹 Fetch CSRF token first
+    fetch(`http://127.0.0.1:8000/csrf-token`, { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => setCsrfToken(data.csrfToken))
+      .catch((error) => console.error('Error fetching CSRF token:', error));
+
+    // 🔹 Fetch Internship Details
     fetch(`http://127.0.0.1:8000/api/offres/${id}`, {
       credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-      },
+      headers: { 'Accept': 'application/json' },
     })
-      .then((response) => response.json())
+      .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          setOffre(data.data);
-        } else {
-          console.error('Failed to fetch offer details');
-        }
+        if (data.success) setOffre(data.data);
       })
       .catch((error) => console.error('Error fetching offer details:', error))
       .finally(() => setLoading(false));
   }, [id]);
 
+  // 🔹 Apply Function - Includes CSRF Token
   const handleApply = () => {
     fetch(`http://127.0.0.1:8000/api/offres/${id}/apply`, {
       method: 'POST',
@@ -49,9 +52,10 @@ const InternshipDetails: React.FC = () => {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken, // 🔥 Include CSRF Token
       },
     })
-      .then((response) => response.json())
+      .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           setApplied(true);
@@ -72,20 +76,14 @@ const InternshipDetails: React.FC = () => {
         <div className="bg-white rounded-lg shadow-xl p-8">
           {offre.entreprise.logo && (
             <div className="flex justify-center mb-6">
-              <img
-                src={offre.entreprise.logo}
-                alt={`${offre.entreprise.name} logo`}
-                className="h-20 w-20 object-cover rounded-full shadow-md"
-              />
+              <img src={offre.entreprise.logo} alt={`${offre.entreprise.name} logo`} className="h-20 w-20 object-cover rounded-full shadow-md" />
             </div>
           )}
           <h2 className="text-3xl font-bold text-gray-900 text-center">{offre.titre}</h2>
           <div className="flex justify-center items-center text-gray-700 mt-2">
             <Building2 className="text-blue-600 mr-2" size={24} />
             <h3 className="text-lg font-semibold">{offre.entreprise.name}</h3>
-            {offre.entreprise.verified && (
-              <CheckCircle className="text-green-500 ml-2" size={20} title="Entreprise Vérifiée" />
-            )}
+            {offre.entreprise.verified && <CheckCircle className="text-green-500 ml-2" size={20} title="Entreprise Vérifiée" />}
           </div>
 
           <div className="mt-6">

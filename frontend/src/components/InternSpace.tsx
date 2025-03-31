@@ -110,7 +110,7 @@ export default function InternSpace() {
       setError(null);
     } catch (error) {
       console.error('Error uploading CV:', error);
-      setError('Failed to upload CV');
+      setError('Veuillez Telecharger Votre CV');
     }
   };
   

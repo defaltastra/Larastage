@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('localisation', 100);
             $table->foreignId('entreprise_id')->constrained('entreprises')->onDelete('cascade');
             $table->timestamp('date_publication')->useCurrent();
+            $table->timestamp('updated_at')->nullable()->useCurrent()->onUpdate(DB::raw('CURRENT_TIMESTAMP'));
+            $table->timestamp('created_at')->nullable()->useCurrent()->onUpdate(DB::raw('CURRENT_TIMESTAMP'));
         });
     }
 

@@ -25,9 +25,10 @@ class Offre extends Model
         return $this->hasMany(Candidature::class);
     }
 
-    // Relationship: An offre can have many stagiaires through candidatures
     public function stagiaires()
     {
-        return $this->belongsToMany(Stagiaire::class, 'candidatures');
+        return $this->belongsToMany(Stagiaire::class, 'candidatures')
+                    ->withPivot('statut')
+                    ->withTimestamps();  
     }
 }

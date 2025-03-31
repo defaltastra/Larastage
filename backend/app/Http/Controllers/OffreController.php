@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Offre;
+use App\Models\Candidature;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class OffreController extends Controller
 {
@@ -72,21 +74,41 @@ class OffreController extends Controller
         ]);
     }
 
-    public function apply(Offre $offre, Request $request)
-{
-    // Assuming the user is authenticated
-    $user = $request->user();
+    public function apply($id, Request $request)
+    {
+        // Fetch the authenticated user
+        $user = Auth::user(); // You can also use `auth()->user()` if using helper methods
 
-    // Here, you would save the application in the database
-    // For example, if you have an `applications` table:
-    $user->applications()->create([
-        'offre_id' => $offre->id,
-    ]);
+        // Find the job offer by ID
+        $offre = Offre::findOrFail($id);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Votre candidature a été envoyée avec succès!'
-    ]);
-}
+        // Check if the user already applied to this offer
+        $existingApplication = Candidature::where('stagiaire_id', $user->id)
+                                          ->where('offre_id', $offre->id)
+                                          ->first();
+
+        if ($existingApplication) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vous avez déjà postulé pour cette offre.'
+            ]);
+        }
+
+        // Create the new candidature (application)
+        $candidature = Candidature::create([
+            'stagiaire_id' => $user->id, // The ID of the currently logged-in user (stagiaire)
+            'offre_id' => $offre->id,
+            'statut' => 'En Attente', // Set status as "pending", you can modify this as per your workflow
+        ]);
+
+        // Return success message
+        return response()->json([
+            'success' => true,
+            'message' => 'Candidature envoyée avec succès!',
+            'data' => $candidature
+        ]);
+    }
+    
+    
 
 }
