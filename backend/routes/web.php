@@ -16,6 +16,8 @@ Route::prefix('api')->group(function() {
     Route::get('/offres', [OffreController::class, 'index'])->name('api.offres.index');
     Route::get('/offres/{offre}', [OffreController::class, 'show'])->name('api.offres.show');
     Route::get('/companies', [EntrepriseController::class, 'index'])->name('api.companies.index');
+    Route::post('/offres/{offre}/apply', [OffreController::class, 'apply'])->middleware('auth:sanctum');
+
 
     // Stagiaire (Candidate) Authentication & API
     Route::prefix('stagiaire')->group(function() {
@@ -51,8 +53,5 @@ Route::prefix('api')->group(function() {
 Route::get('/csrf-token', function (Request $request) {
     return Response::json([
         'csrfToken' => csrf_token(),
-    ])->withHeaders([
-        'Access-Control-Allow-Origin' => $request->header('Origin'), // ✅ Dynamically set allowed origin
-        'Access-Control-Allow-Credentials' => 'true',
     ]);
 });

@@ -22,20 +22,8 @@ const InternshipDetails: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [applied, setApplied] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
-  const [csrfToken, setCsrfToken] = useState<string>('');
 
   useEffect(() => {
-    // Fetch CSRF token
-    fetch(`http://127.0.0.1:8000/csrf-token`, {
-      credentials: 'include',
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setCsrfToken(data.csrfToken);
-      })
-      .catch((error) => console.error('Error fetching CSRF token:', error));
-
-    // Fetch internship details
     fetch(`http://127.0.0.1:8000/api/offres/${id}`, {
       credentials: 'include',
       headers: {
@@ -61,7 +49,6 @@ const InternshipDetails: React.FC = () => {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': csrfToken, // Include CSRF token
       },
     })
       .then((response) => response.json())

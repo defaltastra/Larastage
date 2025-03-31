@@ -8,7 +8,7 @@ import CompanySpace from './components/CompanySpace';
 import GuideAndTips from './components/GuideAndTips';
 import InternLogin from './components/InternLogin';
 import InternRegister from './components/InternRegister';
-
+import InternshipDetails from './components/InternshipDetails';
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -188,6 +188,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/stages" element={<InternshipList />} />
+          <Route path="/stages-details/:id" element={<InternshipDetails />} />
           <Route path="/login-stagiaire" element={<InternLogin />} />
           <Route path="/register-stagiaire" element={<InternRegister />} />
           <Route path="/espace-stagiaire" element={<InternSpace />} />

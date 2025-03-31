@@ -71,4 +71,22 @@ class OffreController extends Controller
             ]
         ]);
     }
+
+    public function apply(Offre $offre, Request $request)
+{
+    // Assuming the user is authenticated
+    $user = $request->user();
+
+    // Here, you would save the application in the database
+    // For example, if you have an `applications` table:
+    $user->applications()->create([
+        'offre_id' => $offre->id,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Votre candidature a été envoyée avec succès!'
+    ]);
+}
+
 }
