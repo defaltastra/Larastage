@@ -5,6 +5,7 @@ export default function InternSpace() {
   const [cv, setCv] = useState(null);
   const [candidatures, setCandidatures] = useState([]);
   const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to manage modal visibility
 
   useEffect(() => {
     fetchCv();
@@ -13,98 +14,77 @@ export default function InternSpace() {
 
   const fetchCv = async () => {
     try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user || !user.id) {
-            throw new Error("User ID not found in localStorage");
-        }
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user.id) {
+        throw new Error("User ID not found in localStorage");
+      }
 
-        const response = await fetch(`http://127.0.0.1:8000/api/stagiaire/cv?id=${user.id}`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' },
-        });
+      const response = await fetch(`http://127.0.0.1:8000/api/stagiaire/cv?id=${user.id}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
 
-        const data = await response.json();
-        console.log("Fetched CV:", data);
+      const data = await response.json();
+      console.log("Fetched CV:", data);
 
-        if (!response.ok || !data.cv) throw new Error("No CV uploaded");
-        setCv(data.cv);
+      if (!response.ok || !data.cv) throw new Error("No CV uploaded");
+      setCv(data.cv);
     } catch (error) {
-        console.error('Error fetching CV:', error);
-        setError('Failed to load CV');
+      console.error('Error fetching CV:', error);
+      setError('Failed to load CV');
     }
-};
-
+  };
 
   const fetchCandidatures = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/stagiaire/candidatures', {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user || !user.id) {
+        throw new Error('User ID not found in localStorage');
+      }
+  
+      const response = await fetch(`http://127.0.0.1:8000/api/stagiaire/candidatures?stagiaire_id=${user.id}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         },
       });
-      
+  
       if (!response.ok) throw new Error('Failed to fetch applications');
-      
+  
       const data = await response.json();
+      console.log("Fetched Candidatures:", data);  // Log the data here
+  
       setCandidatures(data);
     } catch (error) {
       console.error('Error fetching applications:', error);
       setError('Failed to load applications');
     }
   };
-  const getCsrfToken = async () => {
-    try {
-      const response = await fetch('http://127.0.0.1:8000/csrf-token', {
-        method: 'GET',
-        credentials: 'include', // Ensures cookies are sent
-      });
   
-      if (!response.ok) throw new Error('Failed to fetch CSRF token');
-  
-      const data = await response.json();
-      return data.csrfToken;
-    } catch (error) {
-      console.error('Error fetching CSRF token:', error);
-      return null;
-    }
-  };
-  const getUserFromLocalStorage = () => {
-    try {
-      const user = localStorage.getItem('user');
-      return user ? JSON.parse(user) : null;
-    } catch (error) {
-      console.error('Error parsing user data from localStorage:', error);
-      return null;
-    }
-  };
   
   const handleCvUpload = async (event) => {
     try {
       const file = event.target.files[0];
       if (!file) return;
-  
-      const user = getUserFromLocalStorage();
+
+      const user = JSON.parse(localStorage.getItem("user"));
       if (!user || !user.id) throw new Error('User not found in local storage');
-  
-      const csrfToken = await getCsrfToken();
-      if (!csrfToken) throw new Error('CSRF token is missing');
-  
+
       const formData = new FormData();
       formData.append('id', user.id);
       formData.append('cv', file);
-  
+
       const response = await fetch('http://127.0.0.1:8000/api/stagiaire/cv/upload', {
         method: 'POST',
         headers: {
-          'X-CSRF-TOKEN': csrfToken, 
+          'X-CSRF-TOKEN': 'CSRF_TOKEN',
         },
         body: formData,
-        credentials: 'include', // Important for authentication!
+        credentials: 'include', 
       });
-  
+
       if (!response.ok) throw new Error('Failed to upload CV');
-  
+
       const data = await response.json();
       setCv(data.cv);
       setError(null);
@@ -113,9 +93,14 @@ export default function InternSpace() {
       setError('Veuillez Telecharger Votre CV');
     }
   };
-  
-  
-  
+
+  const openModal = () => {
+    setIsModalOpen(true); // Open the modal
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false); // Close the modal
+  };
 
   return (
     <div className="py-16 bg-white">
@@ -170,13 +155,62 @@ export default function InternSpace() {
               </div>
               <button
                 className="ml-auto bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                onClick={() => {/* Add navigation logic */}}
+                onClick={openModal}
               >
                 Voir tout
               </button>
             </div>
           </div>
         </div>
+{/* Modal */}
+{isModalOpen && (
+  <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-3xl w-full overflow-auto">
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Mes Candidatures</h2>
+      
+      <ul>
+        {candidatures.length > 0 ? (
+          candidatures.map((candidature, index) => (
+            <li key={index} className="py-4 border-b flex items-center space-x-4 hover:bg-gray-100 transition-all">
+              <div className="flex items-center space-x-4 w-full">
+                {/* Icon and status */}
+                <div className={`w-8 h-8 flex justify-center items-center rounded-full ${candidature.statut === 'Accepté' ? 'bg-green-500' : candidature.statut === 'Refusé' ? 'bg-red-500' : 'bg-yellow-500'}`}>
+                  {/* Dynamic icon based on status */}
+                  {candidature.statut === 'Accepté' && <span className="text-white text-xl">✔️</span>}
+                  {candidature.statut === 'Refusé' && <span className="text-white text-xl">❌</span>}
+                  {candidature.statut === 'En attente' && <span className="text-white text-xl">⏳</span>}
+                </div>
+
+                <div className="flex-1">
+                  {/* Title and description */}
+                  <p className="font-semibold text-gray-800">{candidature.titre || "No Title"}</p>
+                  <p className="text-gray-600">{candidature.description || "No Description"}</p>
+                </div>
+
+                {/* Status */}
+                <div className="text-sm font-semibold text-gray-600">
+                  {candidature.statut || "No Status"}
+                </div>
+              </div>
+            </li>
+          ))
+        ) : (
+          <p className="text-center text-gray-600 py-4">Aucune candidature disponible.</p>
+        )}
+      </ul>
+
+      <div className="mt-6 flex justify-end">
+        <button
+          className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-all"
+          onClick={closeModal}
+        >
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );

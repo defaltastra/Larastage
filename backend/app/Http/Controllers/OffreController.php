@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Offre;
 use App\Models\Candidature;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class OffreController extends Controller
@@ -109,6 +110,20 @@ class OffreController extends Controller
         ]);
     }
     
+    public function getCandidatures(Request $request)
+    {
+        // Get user ID from the request or from the authenticated user
+        $userId = $request->input('stagiaire_id');  // Or fetch from Auth if needed
+    
+        // Fetch candidatures with the offer details
+        $candidatures = DB::table('candidatures as c')
+            ->join('offres as o', 'c.offre_id', '=', 'o.id')
+            ->select('c.id', 'c.stagiaire_id', 'c.offre_id', 'c.statut', 'c.date_postulation', 'o.titre', 'o.description')
+            ->where('c.stagiaire_id', $userId)
+            ->get();
+    
+        return response()->json($candidatures);
+    }
     
 
 }

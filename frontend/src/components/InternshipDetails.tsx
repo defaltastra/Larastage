@@ -11,7 +11,6 @@ interface OffreDetails {
   entreprise: {
     name: string;
     description: string;
-    verified: boolean;
     logo?: string;
   };
 }
@@ -83,7 +82,7 @@ const InternshipDetails: React.FC = () => {
           <div className="flex justify-center items-center text-gray-700 mt-2">
             <Building2 className="text-blue-600 mr-2" size={24} />
             <h3 className="text-lg font-semibold">{offre.entreprise.name}</h3>
-            {offre.entreprise.verified && <CheckCircle className="text-green-500 ml-2" size={20} title="Entreprise Vérifiée" />}
+          
           </div>
 
           <div className="mt-6">

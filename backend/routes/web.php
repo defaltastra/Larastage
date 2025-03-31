@@ -18,7 +18,7 @@ Route::prefix('api')->group(function() {
     Route::get('/companies', [EntrepriseController::class, 'index'])->name('api.companies.index');
 
     Route::post('/offres/{offre}/apply', [OffreController::class, 'apply']);
-    
+    Route::get('/stagiaire/candidatures', [OffreController::class, 'getCandidatures']);
 
 
     // Stagiaire (Candidate) Authentication & API
@@ -27,7 +27,6 @@ Route::prefix('api')->group(function() {
         Route::post('/register', [StagiaireController::class, 'register']);
         
             Route::get('/cv', [StagiaireController::class, 'getCv']);
-            Route::get('/candidatures', [StagiaireController::class, 'getApplications']);
             Route::post('/cv/upload', [StagiaireController::class, 'uploadCv']); // For uploading CV
             Route::post('/logout', [StagiaireController::class, 'logout']);
             Route::get('/dashboard', [StagiaireController::class, 'dashboard']);
