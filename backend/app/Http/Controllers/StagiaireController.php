@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Stagiaire;
 use App\Models\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Controllers\Controller;
 
 class StagiaireController extends Controller
 {
@@ -79,18 +80,19 @@ class StagiaireController extends Controller
     }
 
     // Get the CV of the authenticated stagiaire
-    public function getCv()
+    public function getCv(Request $request)
     {
-        $stagiaire = Auth::guard('stagiaire')->user();
-
-        // Check if user has uploaded a CV
+        $stagiaire = Stagiaire::find($request->id); 
+    
         if ($stagiaire && $stagiaire->cv) {
-            $cvUrl = Storage::url($stagiaire->cv); // Assuming the CV is stored in the 'public' disk
+            $cvUrl = asset('storage/' . $stagiaire->cv);
             return response()->json(['cv' => $cvUrl]);
         }
-
+    
         return response()->json(['error' => 'No CV uploaded'], 404);
     }
+    
+    
 
     // Get all applications (candidatures) of the authenticated stagiaire
     public function getApplications()
@@ -110,26 +112,29 @@ class StagiaireController extends Controller
     public function uploadCv(Request $request)
     {
         $request->validate([
+            'id' => 'required|integer', // Ensure ID is provided in request
             'cv' => 'required|file|mimes:pdf,doc,docx|max:2048',
         ]);
-
-        $stagiaire = Auth::guard('stagiaire')->user();
-
+    
+        $stagiaire = Stagiaire::find($request->id); // Fetch stagiaire by ID
+    
         if ($stagiaire) {
             if ($request->hasFile('cv')) {
                 // Store the new CV file
                 $path = $request->file('cv')->store('cv', 'public');
                 $stagiaire->cv = $path;
                 $stagiaire->save();
-
+    
                 // Log the response or dump to inspect it
                 Log::info('CV uploaded successfully', ['cv_path' => $path]);
-
-                return response()->json(['cv' => Storage::url($path)]);
+    
+                // Return the full URL for the frontend
+                return response()->json(['cv' => asset('storage/' . $path)]);
             }
         }
-
+    
         // If upload fails
         return response()->json(['error' => 'Unable to upload CV'], 400);
     }
+    
 }

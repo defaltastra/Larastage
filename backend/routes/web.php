@@ -48,9 +48,11 @@ Route::prefix('api')->group(function() {
 });
 
 // CSRF Token route for frontend to fetch
-Route::get('/csrf-token', function () {
-    return response()->json([
-        'csrfToken' => csrf_token()
+Route::get('/csrf-token', function (Request $request) {
+    return Response::json([
+        'csrfToken' => csrf_token(),
+    ])->withHeaders([
+        'Access-Control-Allow-Origin' => $request->header('Origin'), // ✅ Dynamically set allowed origin
+        'Access-Control-Allow-Credentials' => 'true',
     ]);
 });
-
