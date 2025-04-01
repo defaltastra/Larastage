@@ -1,93 +1,172 @@
-import React, { useEffect, useState } from 'react';
-import { Building2, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Building2, MapPin, Calendar, Briefcase, Monitor } from 'lucide-react';
 
-interface OffreDetails {
-  id: number;
-  titre: string;
-  description: string;
-  localisation: string;
-  domaine: string;
-  entreprise: {
-    name: string;
-    description: string;
-    logo?: string;
-  };
+interface EntrepriseDetails {
+  name: string;
+  logo?: string;
 }
 
-const InternshipList: React.FC = () => {
-  const [offres, setOffres] = useState<OffreDetails[]>([]); // State to store all offers
+interface InternshipDetails {
+  titre: string;
+  entreprise: EntrepriseDetails;
+  localisation: string;
+  type: string;
+  mode_travail: string;
+  date_publication: string;
+  lien: string;
+}
+
+interface JobDetails {
+  titre: string;
+  localisation: string;
+  image: string;
+  date_publication: string;
+  lien: string;
+}
+
+const LocalInternshipList: React.FC = () => {
+  const [internships, setInternships] = useState<InternshipDetails[]>([]);
+  const [jobs, setJobs] = useState<JobDetails[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch the data from your API endpoint
   useEffect(() => {
-    // Fetch all internship offers
-    fetch('http://127.0.0.1:8000/api/offres', {
-      credentials: 'include',
-      headers: { 'Accept': 'application/json' },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setOffres(data.data); // Set the fetched offers data
+    const fetchData = async () => {
+      try {
+        const response = await fetch('https://a6b08206-bb7d-4af0-9c57-85e6db7e0ca0-00-1liik3fl9qifz.spock.replit.dev/api/data');
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
         }
-      })
-      .catch((error) => console.error('Error fetching offers:', error))
-      .finally(() => setLoading(false)); // Stop loading once the fetch is complete
-  }, []);
 
-  if (loading) return <p className="text-center text-gray-600">Loading internship offers...</p>;
-  if (offres.length === 0) return <p className="text-center text-red-600">No internships found.</p>;
+        const data = await response.json();
+        
+        setInternships(data.internships || []);
+        setJobs(data.jobs || []);
+      } catch (error: any) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []); 
+
+  if (loading) return <p className="text-center text-blue-600">Loading...</p>;
+
+  if (error) return <p className="text-center text-red-600">{error}</p>;
+
+  if (internships.length === 0 && jobs.length === 0) return <p className="text-center text-red-600">No internships or jobs found.</p>;
 
   return (
     <div className="py-16 bg-gray-50 min-h-screen">
       <div className="max-w-4xl mx-auto px-6 lg:px-8">
-        {offres.map((offre) => (
-          <div key={offre.id} className="bg-white rounded-lg shadow-xl p-8 mb-6">
-            {offre.entreprise.logo && (
-              <div className="flex justify-center mb-6">
-                <img
-                  src={offre.entreprise.logo}
-                  alt={`${offre.entreprise.name} logo`}
-                  className="h-20 w-20 object-cover rounded-full shadow-md"
-                />
+        <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">Internship Opportunities and Jobs in IT</h1>
+        
+        {/* Render Internships */}
+        {internships.map((internship, index) => (
+          <div key={index} className="bg-white rounded-lg shadow-xl p-8 mb-6 transition-all hover:shadow-2xl">
+            <div className="flex items-center mb-6">
+              {internship.entreprise.logo ? (
+                <div className="mr-4">
+                  <img
+                    src={internship.entreprise.logo}
+                    alt={`${internship.entreprise.name} logo`}
+                    className="h-16 w-16 object-cover rounded-full shadow-md"
+                  />
+                </div>
+              ) : (
+                <div className="mr-4 h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center">
+                  <Building2 size={32} className="text-gray-500" />
+                </div>
+              )}
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{internship.titre}</h2>
+                <div className="flex items-center text-gray-700 mt-1">
+                  <Building2 className="text-blue-600 mr-2" size={16} />
+                  <h3 className="text-lg font-semibold">{internship.entreprise.name}</h3>
+                </div>
               </div>
-            )}
-            <h2 className="text-3xl font-bold text-gray-900 text-center">{offre.titre}</h2>
-            <div className="flex justify-center items-center text-gray-700 mt-2">
-              <Building2 className="text-blue-600 mr-2" size={24} />
-              <h3 className="text-lg font-semibold">{offre.entreprise.name}</h3>
-            
             </div>
 
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="flex items-center text-gray-600">
+                <MapPin className="text-blue-600 mr-2" size={18} />
+                <span>{internship.localisation}</span>
+              </div>
+              <div className="flex items-center text-gray-600">
+                <Briefcase className="text-blue-600 mr-2" size={18} />
+                <span>{internship.type}</span>
+              </div>
+              <div className="flex items-center text-gray-600">
+                <Monitor className="text-blue-600 mr-2" size={18} />
+                <span>{internship.mode_travail}</span>
+              </div>
+              <div className="flex items-center text-gray-600">
+                <Calendar className="text-blue-600 mr-2" size={18} />
+                <span>{internship.date_publication}</span>
+              </div>
+            </div>
+
+            {/* Action button */}
             <div className="mt-6">
-              <p className="text-gray-700 text-lg">{offre.description}</p>
-              <p className="text-gray-600">
-                <strong>Localisation:</strong> {offre.localisation}
-              </p>
-              <p className="text-gray-600">
-                <strong>Domaine:</strong> {offre.domaine}
-              </p>
-            </div>
-
-            <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-              <h4 className="text-xl font-semibold text-gray-900">À propos de l'entreprise</h4>
-              <p className="text-gray-700 mt-2">{offre.entreprise.description}</p>
-            </div>
-
-            {/* "Voir plus de détails" button */}
-            <div className="mt-6 text-center">
-              <Link
-                to={`/stages-details/${offre.id}`}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+              <a 
+                href={internship.lien} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-center font-semibold hover:bg-blue-700 transition inline-block"
               >
-                Voir plus de détails
-              </Link>
+                Voir l'annonce originale
+              </a>
             </div>
           </div>
         ))}
+
+        {/* Render Jobs */}
+        {jobs.map((job, index) => {
+          const jobLink = `https://www.marocannonces.com/${job.lien}`;
+          return (
+            <div key={index} className="bg-white rounded-lg shadow-xl p-8 mb-6 transition-all hover:shadow-2xl">
+              <div className="flex items-center mb-6">
+                <div className="mr-4">
+                  <img
+                    src={job.image}
+                    alt={job.titre}
+                    className="h-16 w-16 object-cover rounded-full shadow-md"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">{job.titre}</h2>
+                  <div className="flex items-center text-gray-700 mt-1">
+                    <MapPin className="text-blue-600 mr-2" size={16} />
+                    <span className="text-lg font-semibold">{job.localisation}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center text-gray-600 mb-4">
+                <Calendar className="text-blue-600 mr-2" size={18} />
+                <span>{job.date_publication}</span>
+              </div>
+
+              {/* Action button */}
+              <div className="mt-6">
+                <a 
+                  href={jobLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-center font-semibold hover:bg-blue-700 transition inline-block"
+                >
+                  Voir l'annonce originale
+                </a>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
 
-export default InternshipList;
+export default LocalInternshipList;

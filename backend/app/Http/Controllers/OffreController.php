@@ -125,5 +125,24 @@ class OffreController extends Controller
         return response()->json($candidatures);
     }
     
-
+    public function store(Request $request)
+    {
+        $validatedData = $request->validate([
+            'titre' => 'required|string|max:255',
+            'description' => 'required|string',
+            'domaine' => 'required|string|max:255',
+            'localisation' => 'required|string|max:255',
+            'entreprise_id' => 'required|exists:entreprises,id',
+            'date_publication' => 'required|date'
+        ]);
+    
+        $offre = Offre::create($validatedData);
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Offre créée avec succès.',
+            'data' => $offre
+        ], 201);
+    }
+    
 }

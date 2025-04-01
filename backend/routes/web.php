@@ -16,6 +16,7 @@ Route::prefix('api')->group(function() {
     Route::get('/offres', [OffreController::class, 'index'])->name('api.offres.index');
     Route::get('/offres/{offre}', [OffreController::class, 'show'])->name('api.offres.show');
     Route::get('/companies', [EntrepriseController::class, 'index'])->name('api.companies.index');
+    Route::post('/offres', [OffreController::class, 'store'])->name('api.offres.store');
 
     Route::post('/offres/{offre}/apply', [OffreController::class, 'apply']);
     Route::get('/stagiaire/candidatures', [OffreController::class, 'getCandidatures']);
