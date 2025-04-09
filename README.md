@@ -27,7 +27,7 @@ This project is an **Intern Management System** built using **React** for the fr
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/Larastage.git
+   git clone https://github.com/defaltastra/Larastage.git
    ```
 
 2. Navigate to the backend directory:
