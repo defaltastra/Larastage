@@ -34,7 +34,7 @@ const LocalInternshipList: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('https://a6b08206-bb7d-4af0-9c57-85e6db7e0ca0-00-1liik3fl9qifz.spock.replit.dev/api/data');
+        const response = await fetch('https://morocco-job-scraper.onrender.com/api/data');
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
