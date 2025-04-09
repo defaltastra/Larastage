@@ -83,7 +83,7 @@ The frontend will be accessible at `http://localhost:3000` and the backend API a
 
 We welcome contributions! If you'd like to contribute, please fork the repository and create a pull request with your changes.
 
-
+ 
 
 ## 💬 License
 
