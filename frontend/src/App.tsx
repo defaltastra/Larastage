@@ -4,7 +4,6 @@ import { Menu, X, ChevronDown } from 'lucide-react';
 import Home from './components/Home';
 import InternshipList from './components/InternshipList';
 import InternSpace from './components/InternSpace';
-import CompanySpace from './components/CompanySpace';
 import GuideAndTips from './components/GuideAndTips';
 import InternLogin from './components/InternLogin';
 import InternRegister from './components/InternRegister';
@@ -144,12 +143,7 @@ function App() {
                   >
                     Espace stagiaire
                   </Link>
-                  <Link 
-                    to="/espace-entreprise" 
-                    className={`${location.pathname === '/espace-entreprise' ? 'text-blue-600' : 'text-gray-600'} hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium`}
-                  >
-                    Espace entreprise
-                  </Link>
+                
                 </>
               )}
 
@@ -192,7 +186,6 @@ function App() {
           <Route path="/login-stagiaire" element={<InternLogin />} />
           <Route path="/register-stagiaire" element={<InternRegister />} />
           <Route path="/espace-stagiaire" element={<InternSpace />} />
-          <Route path="/espace-entreprise" element={<CompanySpace />} />
           <Route path="/guide" element={<GuideAndTips />} />
         </Routes>
       </div>
