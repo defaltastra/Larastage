@@ -29,8 +29,8 @@ const LocalInternshipList: React.FC = () => {
   const [jobs, setJobs] = useState<JobDetails[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [locationFilter, setLocationFilter] = useState<string>('');
 
-  // Fetch the data from your API endpoint
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -40,7 +40,7 @@ const LocalInternshipList: React.FC = () => {
         }
 
         const data = await response.json();
-        
+
         setInternships(data.internships || []);
         setJobs(data.jobs || []);
       } catch (error: any) {
@@ -51,22 +51,66 @@ const LocalInternshipList: React.FC = () => {
     };
 
     fetchData();
-  }, []); 
+  }, []);
+
+  const allLocations = [
+    ...new Set([
+      ...internships.map(i => i.localisation),
+      ...jobs.map(j => j.localisation),
+    ]),
+  ].sort();
+
+  const filteredInternships = locationFilter
+    ? internships.filter(i =>
+        i.localisation.toLowerCase().includes(locationFilter.toLowerCase())
+      )
+    : internships;
+
+  const filteredJobs = locationFilter
+    ? jobs.filter(j =>
+        j.localisation.toLowerCase().includes(locationFilter.toLowerCase())
+      )
+    : jobs;
 
   if (loading) return <p className="text-center text-blue-600">Loading...</p>;
 
   if (error) return <p className="text-center text-red-600">{error}</p>;
 
-  if (internships.length === 0 && jobs.length === 0) return <p className="text-center text-red-600">No internships or jobs found.</p>;
+  if (filteredInternships.length === 0 && filteredJobs.length === 0)
+    return <p className="text-center text-red-600">No internships or jobs found.</p>;
 
   return (
     <div className="py-16 bg-gray-50 min-h-screen">
       <div className="max-w-4xl mx-auto px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">Internship Opportunities and Jobs in IT</h1>
-        
+        <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
+          Internship Opportunities and Jobs in IT
+        </h1>
+
+        {/* Location Filter */}
+        <div className="mb-8">
+          <label className="block mb-2 text-gray-700 font-semibold">
+            Filter by Location
+          </label>
+          <select
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Locations</option>
+            {allLocations.map((loc, index) => (
+              <option key={index} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Render Internships */}
-        {internships.map((internship, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-xl p-8 mb-6 transition-all hover:shadow-2xl">
+        {filteredInternships.map((internship, index) => (
+          <div
+            key={index}
+            className="bg-white rounded-lg shadow-xl p-8 mb-6 transition-all hover:shadow-2xl"
+          >
             <div className="flex items-center mb-6">
               {internship.entreprise.logo ? (
                 <div className="mr-4">
@@ -85,7 +129,9 @@ const LocalInternshipList: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900">{internship.titre}</h2>
                 <div className="flex items-center text-gray-700 mt-1">
                   <Building2 className="text-blue-600 mr-2" size={16} />
-                  <h3 className="text-lg font-semibold">{internship.entreprise.name}</h3>
+                  <h3 className="text-lg font-semibold">
+                    {internship.entreprise.name}
+                  </h3>
                 </div>
               </div>
             </div>
@@ -109,11 +155,10 @@ const LocalInternshipList: React.FC = () => {
               </div>
             </div>
 
-            {/* Action button */}
             <div className="mt-6">
-              <a 
-                href={internship.lien} 
-                target="_blank" 
+              <a
+                href={internship.lien}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-center font-semibold hover:bg-blue-700 transition inline-block"
               >
@@ -124,10 +169,13 @@ const LocalInternshipList: React.FC = () => {
         ))}
 
         {/* Render Jobs */}
-        {jobs.map((job, index) => {
+        {filteredJobs.map((job, index) => {
           const jobLink = `https://www.marocannonces.com/${job.lien}`;
           return (
-            <div key={index} className="bg-white rounded-lg shadow-xl p-8 mb-6 transition-all hover:shadow-2xl">
+            <div
+              key={index}
+              className="bg-white rounded-lg shadow-xl p-8 mb-6 transition-all hover:shadow-2xl"
+            >
               <div className="flex items-center mb-6">
                 <div className="mr-4">
                   <img
@@ -150,11 +198,10 @@ const LocalInternshipList: React.FC = () => {
                 <span>{job.date_publication}</span>
               </div>
 
-              {/* Action button */}
               <div className="mt-6">
-                <a 
-                  href={jobLink} 
-                  target="_blank" 
+                <a
+                  href={jobLink}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg text-center font-semibold hover:bg-blue-700 transition inline-block"
                 >
